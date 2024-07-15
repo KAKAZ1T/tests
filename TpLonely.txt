@@ -1,0 +1,167 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.CoreGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 300)
+frame.Position = UDim2.new(0.5, -100, 0.5, -150)
+frame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+frame.BackgroundTransparency = 0.3
+frame.Parent = screenGui
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 25)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+titleLabel.TextColor3 = Color3.new(1, 1, 1)
+titleLabel.Text = "Lonely Tp"
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 18
+titleLabel.Parent = frame
+
+local playerNameLabel = Instance.new("TextLabel")
+playerNameLabel.Size = UDim2.new(1, 0, 0, 50)
+playerNameLabel.Position = UDim2.new(0, 0, 0, 25)
+playerNameLabel.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+playerNameLabel.TextColor3 = Color3.new(1, 1, 1)
+playerNameLabel.Text = "No player selected"
+playerNameLabel.Parent = frame
+
+local selectedPlayerName = ""
+
+local function selectPlayer(playerName)
+    selectedPlayerName = playerName
+    playerNameLabel.Text = "Selected: " .. selectedPlayerName
+    
+    for _, child in ipairs(playerListFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    playerListFrame.Visible = false
+end
+
+local function teleportToPlayer()
+    if selectedPlayerName ~= "" then
+        local targetPlayer = Players:FindFirstChild(selectedPlayerName)
+        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
+        else
+            playerNameLabel.Text = "Player not found or unavailable"
+        end
+    else
+        playerNameLabel.Text = "No player selected"
+    end
+end
+
+local playerListFrame = Instance.new("ScrollingFrame")
+playerListFrame.Size = UDim2.new(1, 0, 0, 150)
+playerListFrame.Position = UDim2.new(0, 0, 0, 75)
+playerListFrame.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+playerListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+playerListFrame.ScrollBarThickness = 10
+playerListFrame.Visible = false
+playerListFrame.Parent = frame
+
+local function togglePlayerList()
+    if playerListFrame.Visible then
+        playerListFrame.Visible = false
+    else
+        for _, child in ipairs(playerListFrame:GetChildren()) do
+            if child:IsA("TextButton") then
+                child:Destroy()
+            end
+        end
+
+        local players = Players:GetPlayers()
+        local listHeight = 0
+        for _, player in ipairs(players) do
+            if player ~= LocalPlayer then
+                local playerButton = Instance.new("TextButton")
+                playerButton.Size = UDim2.new(1, 0, 0, 30)
+                playerButton.Position = UDim2.new(0, 0, 0, listHeight)
+                playerButton.BackgroundColor3 = Color3.new(0.4, 0.4, 0.4)
+                playerButton.TextColor3 = Color3.new(1, 1, 1)
+                playerButton.Text = player.Name
+                playerButton.MouseButton1Click:Connect(function()
+                    selectPlayer(player.Name)
+                end)
+                playerButton.Parent = playerListFrame
+
+                listHeight = listHeight + 30
+            end
+        end
+
+        playerListFrame.CanvasSize = UDim2.new(0, 0, 0, listHeight)
+        playerListFrame.Visible = true
+    end
+end
+
+local selectPlayerButton = Instance.new("TextButton")
+selectPlayerButton.Size = UDim2.new(1, 0, 0, 50)
+selectPlayerButton.Position = UDim2.new(0, 0, 0, 225)
+selectPlayerButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+selectPlayerButton.TextColor3 = Color3.new(1, 1, 1)
+selectPlayerButton.Text = "Select Player"
+selectPlayerButton.MouseButton1Click:Connect(togglePlayerList)
+selectPlayerButton.Parent = frame
+
+local teleportButton = Instance.new("TextButton")
+teleportButton.Size = UDim2.new(1, 0, 0, 50)
+teleportButton.Position = UDim2.new(0, 0, 0, 275)
+teleportButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+teleportButton.TextColor3 = Color3.new(1, 1, 1)
+teleportButton.Text = "Teleport"
+teleportButton.MouseButton1Click:Connect(teleportToPlayer)
+teleportButton.Parent = frame
+
+local function toggleMainFrame()
+    frame.Visible = not frame.Visible
+end
+
+local openCloseButton = Instance.new("ImageButton")
+openCloseButton.Size = UDim2.new(0, 50, 0, 50)
+openCloseButton.Position = UDim2.new(0.07, 0, 0.35, 0)
+openCloseButton.BackgroundColor3 = Color3.new(0.5, 0.5, 0.5)
+openCloseButton.Image = "rbxassetid://<INSERT_IMAGE_ASSET_ID>"
+openCloseButton.Parent = screenGui
+openCloseButton.MouseButton1Click:Connect(toggleMainFrame)
+
+local dragging = false
+local dragInput, mousePos, buttonPos
+
+openCloseButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        mousePos = input.Position
+        buttonPos = openCloseButton.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+openCloseButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - mousePos
+        openCloseButton.Position = UDim2.new(
+            buttonPos.X.Scale,
+            buttonPos.X.Offset + delta.X,
+            buttonPos.Y.Scale,
+            buttonPos.Y.Offset + delta.Y
+        )
+    end
+end)
